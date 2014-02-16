@@ -84,6 +84,28 @@ class Model
     public $guarded = array();
 
     /**
+     * Define type of fields. Available types:
+     * \Zizaco\Mongolid\Model::FIELD_TYPE_KEEP (default)
+     * \Zizaco\Mongolid\Model::FIELD_TYPE_AUTO
+     * \Zizaco\Mongolid\Model::FIELD_TYPE_OBJECT_ID
+     * \Zizaco\Mongolid\Model::FIELD_TYPE_STRING
+     * \Zizaco\Mongolid\Model::FIELD_TYPE_INT
+     * \Zizaco\Mongolid\Model::FIELD_TYPE_DOUBLE
+     *
+     * @var array
+     */
+    protected $fieldTypes = array(
+        '_id' => self::FIELD_TYPE_AUTO
+    );
+
+    const FIELD_TYPE_KEEP = -1;
+    const FIELD_TYPE_AUTO = 0;
+    const FIELD_TYPE_OBJECT_ID = 1;
+    const FIELD_TYPE_STRING = 2;
+    const FIELD_TYPE_INT = 3;
+    const FIELD_TYPE_DOUBLE = 4;
+
+    /**
      * Save the model to the database.
      *
      * @return bool
@@ -335,6 +357,13 @@ class Model
         return $query;
     }
 
+    private function getFieldType($key) {
+        if (array_key_exists($key, $this->fieldTypes)) {
+            return $this->fieldTypes[$key];
+        }
+        return self::FIELD_TYPE_KEEP;
+    }
+
     /**
      * Prepare attributes to be used in MongoDb.
      * especially the _id.
@@ -344,15 +373,29 @@ class Model
      */
     private function prepareMongoAttributes($attr)
     {
-        // Translate the primary key field into _id
-        if( isset($attr['_id']) ) {
-            // If its a 24 digits hexadecimal, then it's a MongoId
-            if ($this->isMongoId($attr['_id'])) {
-                $attr['_id'] = new \MongoId( $attr['_id'] );
-            } elseif(is_numeric($attr['_id'])) {
-                $attr['_id'] = (int)$attr['_id'];
-            } else {
-                $attr['_id'] = $attr['_id'];
+        foreach ($attr as $key => $value) {
+            if ($value !== null) {
+                switch ($this->getFieldType($key)) {
+                    case self::FIELD_TYPE_OBJECT_ID:
+                        $attr[$key] = new \MongoId($value);
+                        break;
+                    case self::FIELD_TYPE_STRING:
+                        $attr[$key] = (string)$value;
+                        break;
+                    case self::FIELD_TYPE_INT:
+                        $attr[$key] = (int)$value;
+                        break;
+                    case self::FIELD_TYPE_DOUBLE:
+                        $attr[$key] = (double)$value;
+                        break;
+                    case self::FIELD_TYPE_AUTO:
+                        if ($this->isMongoId($value)) {
+                            $attr[$key] = new \MongoId($value);
+                        } elseif (is_numeric($value)) {
+                            $attr[$key] = (int)$value;
+                        }
+                        break;
+                }
             }
         }
 
