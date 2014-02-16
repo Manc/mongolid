@@ -187,13 +187,13 @@ class Model
      *
      * @param  mixed  $id
      * @param  array  $fields
-     * @return Zizaco\Mongolid\MongoModel
+     * @return Zizaco\Mongolid\MongoModel|null
      */
     public static function first($id = array(), $fields = array())
     {
         $instance = static::newInstance();
 
-        if (! $instance->collection) return false;
+        if (! $instance->collection) return null;
 
         // Get query array
         $query = $instance->prepareQuery($id);
@@ -209,7 +209,7 @@ class Model
             $instance = $instance->polymorph( $instance );
             return $instance;
         } else {
-            return false;
+            return null;
         }
     }
 
