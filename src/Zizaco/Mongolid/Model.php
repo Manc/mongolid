@@ -680,14 +680,13 @@ class Model
     }
 
     /**
-     * Embed a new document to an attribute. It will also generate an
-     * _id for the document if it's not present.
+     * Embed a new document to an attribute.
      *
      * @param string $field
-     * @param mixed $obj _id, document or model instance
+     * @param mixed $obj document or model instance
      * @return void
      */
-    public function embed($field, &$obj)
+    public function embed($field, $obj)
     {
         if( is_a($obj,'Zizaco\Mongolid\Model') ) {
             $document = $obj->toArray();
@@ -695,34 +694,15 @@ class Model
             $document = $obj;
         }
 
-        if($document != null) {
+        if($document !== null) {
             $embedded = (array)$this->getAttribute($field);
-
-            if(isset($document['_id'])) {
-                foreach ($embedded as $key => $value) {
-
-                    if(isset($value['_id']) && $value['_id'] == $document['_id']) {
-                        unset($embedded[$key]);
-                        break;
-                    }
-                }
-            } else {
-                $generatedId = new \MongoId;
-                $document['_id'] = $generatedId;
-
-                if( is_a($obj,'Zizaco\Mongolid\Model') ) {
-                    $obj->_id = $generatedId;
-                }
-            }
-
             $embedded[] = $document;
-
             $this->setAttribute($field, array_values($embedded));
         }
     }
 
     /**
-     * Embed a new document to an attribute
+     * Remove embedded document from an attribute.
      *
      * @param string $field
      * @param mixed $target, document or part of the document. Ex: ['name'='Something']
